@@ -34,7 +34,7 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 
 	describe('retrieving package version', () => {
 		it('retrieves patch value from package.json', () => {
-			expect(vUtils.getSemanticVersion()).toMatch(verRegex);
+			expect(vUtils.getSemanticVersion('0.3.2')).toMatch(verRegex);
 			expect(vUtils.getSemanticVersion('0.0.0')).toEqual('v0.0.0');
 			expect(vUtils.getSemanticVersion('0.2.0')).toEqual('v0.2.0');
 			expect(vUtils.getSemanticVersion('1.2.0')).toEqual('v1.2.0');
@@ -48,7 +48,7 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 			}).toThrow();
 		});
 		it('retrieves minor value from package.json', () => {
-			expect(vUtils.getMinorVersion()).toMatch(minorVerRegex);
+			expect(vUtils.getMinorVersion('0.3.2')).toMatch(minorVerRegex);
 		});
 	});
 	describe('parses and processes directories', () => {

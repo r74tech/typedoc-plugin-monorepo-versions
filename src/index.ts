@@ -36,7 +36,10 @@ export function load(app: Application) {
 	vHooks.injectSelectJs(app);
 	vHooks.injectSelectHtml(app, vOptions.domLocation!);
 
-	const { rootPath, targetPath } = vUtils.getPaths(app);
+	const packageFile = vOptions.packageFile ?? 'package.json';
+	const packagePath = path.join(process.cwd(), packageFile);
+	const packageVersion = fs.readJSONSync(packagePath).version;
+	const { rootPath, targetPath } = vUtils.getPaths(app, packageVersion);
 
 	/**
 	 * Inject modified 'out' location

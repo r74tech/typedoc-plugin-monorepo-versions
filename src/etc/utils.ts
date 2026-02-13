@@ -10,8 +10,6 @@ import semver from 'semver';
 import type { version, semanticAlias, metadata } from '../types.js';
 import { Application } from 'typedoc';
 import { fileURLToPath } from 'url';
-const packagePath = path.join(process.cwd(), 'package.json');
-const pack = fs.readJSONSync(packagePath);
 
 /**
  * Gets the docs metadata file path.
@@ -193,7 +191,7 @@ export function getLatestVersion(
  * @returns The {@link semanticAlias alias} of the given version.
  */
 export function getVersionAlias(
-	version?: string,
+	version: string,
 	stable: 'auto' | version = 'auto',
 	dev: 'auto' | version = 'auto',
 ): semanticAlias {
@@ -213,7 +211,7 @@ export function getVersionAlias(
  * @param version
  * @returns The package version
  */
-export function getSemanticVersion(version: string = pack.version): version {
+export function getSemanticVersion(version: string): version {
 	if (!version) {
 		throw new Error('Package version was not found');
 	}
@@ -234,7 +232,7 @@ export function getSemanticVersion(version: string = pack.version): version {
  * Drops the patch from a semantic version string
  * @returns a minor version string in the for 0.0
  */
-export function getMinorVersion(version?: string): version {
+export function getMinorVersion(version: string): version {
 	version = getSemanticVersion(version);
 	const { major, minor } = semver.coerce(version, { loose: true })!;
 	return `v${major}.${minor}`;
@@ -306,18 +304,21 @@ export function makeAliasLink(
 	makeRelativeSymlinks?: boolean,
 ): void {
 	pegVersion = getSemanticVersion(pegVersion);
-	const _docRoot = makeRelativeSymlinks ? './' : docRoot;
-	const stableSource = path.join(_docRoot, pegVersion);
-	const stableTarget = path.join(_docRoot, alias);
+	const source = path.join(docRoot, pegVersion);
+	const target = path.join(docRoot, alias);
 
-	if (makeRelativeSymlinks) process.chdir(docRoot);
-
-	if (!fs.pathExistsSync(stableSource))
+	if (!fs.pathExistsSync(source))
 		throw new Error(`Document directory does not exist: ${pegVersion}`);
 
-	if (fs.lstatSync(stableTarget, { throwIfNoEntry: false })?.isSymbolicLink())
-		fs.unlinkSync(stableTarget);
-	fs.ensureSymlinkSync(stableSource, stableTarget, 'junction');
+	if (fs.lstatSync(target, { throwIfNoEntry: false })?.isSymbolicLink())
+		fs.unlinkSync(target);
+
+	if (makeRelativeSymlinks) {
+		const relSource = path.relative(path.dirname(target), source);
+		fs.ensureSymlinkSync(relSource, target, 'junction');
+	} else {
+		fs.ensureSymlinkSync(source, target, 'junction');
+	}
 }
 
 /**
@@ -362,14 +363,18 @@ export function makeMinorVersionLinks(
 		})
 		// filter to unique values
 		.filter((v, i, s) => s.indexOf(v) === i)) {
-		const _docRoot = makeRelativeSymlinks ? './' : docRoot;
-		const target = path.join(_docRoot, getMinorVersion(version));
-		const src = path.join(_docRoot, version!);
-		if (makeRelativeSymlinks) process.chdir(docRoot);
+		const target = path.join(docRoot, getMinorVersion(version!));
+		const src = path.join(docRoot, version!);
 
 		if (fs.lstatSync(target, { throwIfNoEntry: false })?.isSymbolicLink())
 			fs.unlinkSync(target);
-		fs.ensureSymlinkSync(src, target, 'junction');
+
+		if (makeRelativeSymlinks) {
+			const relSrc = path.relative(path.dirname(target), src);
+			fs.ensureSymlinkSync(relSrc, target, 'junction');
+		} else {
+			fs.ensureSymlinkSync(src, target, 'junction');
+		}
 	}
 }
 
@@ -385,12 +390,15 @@ export function getSymlinkVersion(symlink: string, docRoot: string): version | u
 		fs.pathExistsSync(symlinkPath) &&
 		fs.lstatSync(symlinkPath).isSymbolicLink()
 	) {
-		const targetPath = fs.readlinkSync(symlinkPath);
+		const rawTarget = fs.readlinkSync(symlinkPath);
+		// resolve relative symlink targets against docRoot
+		const targetPath = path.isAbsolute(rawTarget)
+			? rawTarget
+			: path.resolve(docRoot, rawTarget);
 		if (
 			fs.pathExistsSync(targetPath) &&
 			fs.statSync(targetPath).isDirectory()
 		) {
-			// retrieve the version the symlink is pointing to
 			return getSemanticVersion(path.basename(targetPath));
 		}
 	}
@@ -402,7 +410,7 @@ export function getSymlinkVersion(symlink: string, docRoot: string): version | u
  * @param version
  * @returns the paths
  */
-export function getPaths(app: Application, version?: version) {
+export function getPaths(app: Application, version: string) {
 	const defaultRootPath = path.join(process.cwd(), 'docs');
 	const rootPath = app.options.getValue('out') || defaultRootPath;
 	return {
