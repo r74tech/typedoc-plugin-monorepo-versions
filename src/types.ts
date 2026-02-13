@@ -7,6 +7,18 @@
 import type { RendererHooks } from 'typedoc';
 
 /**
+ * Monorepo configuration options.
+ * When specified, the plugin operates in monorepo mode where each package
+ * has its own versioned documentation under `{root}/{name}/{version}/`.
+ */
+export interface monorepoOptions {
+	/** Package name used as the directory name. Only alphanumeric, hyphens, and underscores allowed. */
+	name: string;
+	/** Path to the docs root directory (absolute or relative to cwd). */
+	root: string;
+}
+
+/**
  * User defined options under the key of `versions` in typedoc.json
  */
 export interface versionsOptions {
@@ -27,6 +39,8 @@ export interface versionsOptions {
 	domLocation?: keyof RendererHooks | 'false';
 	packageFile?: string | 'package.json';
 	makeRelativeLinks?: boolean;
+	/** Monorepo configuration. When set, enables monorepo mode. */
+	monorepo?: monorepoOptions;
 }
 export type version = `v${string}`;
 export type semanticAlias = 'stable' | 'dev';
@@ -35,4 +49,8 @@ export type metadata = {
 	versions?: version[];
 	stable?: version;
 	dev?: version;
+};
+
+export type packagesMetadata = {
+	packages: string[];
 };
