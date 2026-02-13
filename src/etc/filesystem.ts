@@ -110,7 +110,7 @@ export function getPaths(
 		};
 	}
 	const defaultRootPath = path.join(process.cwd(), 'docs');
-	const rootPath = app.options.getValue('out') || defaultRootPath;
+	const rootPath = (app.options.getValue('out') as string) || defaultRootPath;
 	return {
 		rootPath,
 		packageRootPath: undefined,
