@@ -1,35 +1,25 @@
 name: Test
 on:
-    workflow_dispatch:
-    workflow_call:
-    pull_request:
-        branches:
-            - '*'
-    push:
-        branches:
-            - '*'
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    branches:
+      - "*"
+  push:
+    branches:
+      - "*"
+    tags-ignore:
+      - "v*"
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                node-version: [lts/*, latest]
-        steps:
-            - uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Test with Node ${{matrix.node-version}}
-              uses: actions/setup-node@v4
-              with:
-                  node-version: ${{matrix.node-version}}
-                  cache: npm
-            - run: |
-                  npm ci
-                  npm run build
-                  npm run test
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-            - name: Upload build artifact
-              if: matrix.node-version == 'lts/*'
-              uses: actions/upload-artifact@v4
-              with:
-                  name: distribution
-                  path: ./dist
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run test
