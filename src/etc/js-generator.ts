@@ -30,3 +30,41 @@ export function makeJsKeys(metadata: metadata): string {
 	];
 	return lines.join('\n').concat('\n');
 }
+
+/**
+ * Creates a string of JavaScript defining an array of all packages
+ * to be included in the frontend package select.
+ */
+export function makePackagesJs(packages: string[]): string {
+	const lines = [
+		'"use strict"',
+		'export const DOC_PACKAGES = [',
+		...packages.map((p) => `	'${p}',`),
+		'];',
+	];
+	return lines.join('\n').concat('\n');
+}
+
+/**
+ * Creates an HTML page listing all packages with links.
+ */
+export function makePackagesIndexHtml(packages: string[]): string {
+	const listItems = packages
+		.map((p) => `		<li><a href="${p}/stable/">${p}</a></li>`)
+		.join('\n');
+	return [
+		'<!DOCTYPE html>',
+		'<html lang="en">',
+		'<head>',
+		'	<meta charset="UTF-8">',
+		'	<title>API Documentation</title>',
+		'</head>',
+		'<body>',
+		'	<h1>Packages</h1>',
+		'	<ul>',
+		listItems,
+		'	</ul>',
+		'</body>',
+		'</html>',
+	].join('\n').concat('\n');
+}

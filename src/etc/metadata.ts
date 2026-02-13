@@ -7,7 +7,7 @@
 import path from 'path';
 import fs from 'fs-extra';
 import semver from 'semver';
-import type { version, semanticAlias, metadata } from '../types.js';
+import type { version, semanticAlias, metadata, packagesMetadata } from '../types.js';
 import {
 	getSemanticVersion,
 	getLatestVersion,
@@ -137,4 +137,29 @@ export function refreshMetadataAlias(
  */
 export function saveMetadata(metadata: metadata, docRoot: string): void {
 	fs.writeJsonSync(getMetadataPath(docRoot), metadata);
+}
+
+/**
+ * Gets the packages metadata file path.
+ */
+export function getPackagesMetadataPath(docRoot: string): string {
+	return path.join(docRoot, '.typedoc-plugin-packages');
+}
+
+/**
+ * Loads the packages metadata file.
+ */
+export function loadPackagesMetadata(docRoot: string): packagesMetadata {
+	try {
+		return fs.readJsonSync(getPackagesMetadataPath(docRoot));
+	} catch {
+		return { packages: [] };
+	}
+}
+
+/**
+ * Saves a given {@link packagesMetadata} object to disk.
+ */
+export function savePackagesMetadata(meta: packagesMetadata, docRoot: string): void {
+	fs.writeJsonSync(getPackagesMetadataPath(docRoot), meta);
 }

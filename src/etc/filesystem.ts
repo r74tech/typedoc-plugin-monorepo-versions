@@ -7,7 +7,7 @@
 import path from 'path';
 import fs from 'fs-extra';
 import semver from 'semver';
-import type { version, semanticAlias } from '../types.js';
+import type { version, semanticAlias, monorepoOptions } from '../types.js';
 import { Application } from 'typedoc';
 import { fileURLToPath } from 'url';
 import {
@@ -93,12 +93,23 @@ export function makeMinorVersionLinks(
 
 /**
  * Resolve the root document path and document build path.
+ * In monorepo mode, returns an additional packageRootPath.
  */
-export function getPaths(app: Application, version: string) {
+export function getPaths(app: Application, version: string, monorepo?: monorepoOptions) {
+	if (monorepo) {
+		const rootPath = path.resolve(process.cwd(), monorepo.root);
+		const packageRootPath = path.join(rootPath, monorepo.name);
+		return {
+			rootPath,
+			packageRootPath,
+			targetPath: path.join(packageRootPath, getSemanticVersion(version)),
+		};
+	}
 	const defaultRootPath = path.join(process.cwd(), 'docs');
 	const rootPath = app.options.getValue('out') || defaultRootPath;
 	return {
 		rootPath,
+		packageRootPath: undefined,
 		targetPath: path.join(rootPath, getSemanticVersion(version)),
 	};
 }

@@ -24,6 +24,9 @@ export {
 	refreshMetadataVersions,
 	refreshMetadataAlias,
 	saveMetadata,
+	getPackagesMetadataPath,
+	loadPackagesMetadata,
+	savePackagesMetadata,
 } from './metadata.js';
 
 export {
@@ -34,4 +37,4 @@ export {
 	handleAssets,
 } from './filesystem.js';
 
-export { makeJsKeys } from './js-generator.js';
+export { makeJsKeys, makePackagesJs, makePackagesIndexHtml } from './js-generator.js';

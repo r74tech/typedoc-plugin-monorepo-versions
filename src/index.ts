@@ -28,38 +28,45 @@ export function load(app: Application) {
 			domLocation: 'false',
 			packageFile: 'package.json',
 			makeRelativeLinks: false,
+			monorepo: undefined,
 		},
 	});
 
 	const vOptions = app.options.getValue("versions") as versionsOptions;
 
-	vHooks.injectSelectJs(app);
-	vHooks.injectSelectHtml(app, vOptions.domLocation!);
+	if (vOptions.monorepo) {
+		if (!vOptions.monorepo.name || !/^[a-zA-Z0-9_-]+$/.test(vOptions.monorepo.name)) {
+			throw new Error('monorepo.name is required and must contain only alphanumeric characters, hyphens, and underscores');
+		}
+		if (!vOptions.monorepo.root) {
+			throw new Error('monorepo.root is required');
+		}
+	}
+
+	const isMonorepo = !!vOptions.monorepo;
+
+	vHooks.injectSelectJs(app, isMonorepo);
+	vHooks.injectSelectHtml(app, vOptions.domLocation!, isMonorepo);
 
 	const packageFile = vOptions.packageFile ?? 'package.json';
 	const packagePath = path.join(process.cwd(), packageFile);
 	const packageVersion = fs.readJSONSync(packagePath).version;
-	const { rootPath, targetPath } = vUtils.getPaths(app, packageVersion);
+	const { rootPath, packageRootPath, targetPath } = vUtils.getPaths(app, packageVersion, vOptions.monorepo);
 
-	/**
-	 * Inject modified 'out' location
-	 */
+	// The doc root for version management: packageRootPath in monorepo mode, rootPath in single mode
+	const versionRoot = packageRootPath ?? rootPath;
+
 	app.on("bootstrapEnd", (instance) => {
-		// HACK: private property override
 		if (targetPath) instance.options['_values']['out'] = targetPath;
 	});
 
-	/**
-	 * The documents have rendered and we now process directories into the select options
-	 * @event RendererEvent.END
-	 */
 	app.renderer.on(RendererEvent.END, () => {
 		vUtils.handleAssets(targetPath);
 		vUtils.handleJeckyll(rootPath, targetPath);
 
 		const metadata = vUtils.refreshMetadata(
-			vUtils.loadMetadata(rootPath),
-			rootPath,
+			vUtils.loadMetadata(versionRoot),
+			versionRoot,
 			vOptions.stable,
 			vOptions.dev,
 			vOptions.packageFile,
@@ -67,33 +74,53 @@ export function load(app: Application) {
 
 		vUtils.makeAliasLink(
 			'stable',
-			rootPath,
+			versionRoot,
 			metadata.stable! ?? metadata.dev,
 			vOptions.makeRelativeLinks,
 		);
 		vUtils.makeAliasLink(
 			'dev',
-			rootPath,
+			versionRoot,
 			metadata.dev! ?? metadata.stable,
 			vOptions.makeRelativeLinks,
 		);
 		vUtils.makeMinorVersionLinks(
 			metadata.versions!,
-			rootPath,
+			versionRoot,
 			vOptions.makeRelativeLinks,
 		);
 
 		const jsVersionKeys = vUtils.makeJsKeys(metadata);
-		fs.writeFileSync(path.join(rootPath, 'versions.js'), jsVersionKeys);
+		fs.writeFileSync(path.join(versionRoot, 'versions.js'), jsVersionKeys);
 
+		// Package-level index.html: redirect to stable/ or dev/
 		fs.writeFileSync(
-			path.join(rootPath, 'index.html'),
+			path.join(versionRoot, 'index.html'),
 			`<meta http-equiv="refresh" content="0; url=${
 				metadata.stable ? 'stable/' : 'dev/'
 			}"/>`,
 		);
 
-		vUtils.saveMetadata(metadata, rootPath);
+		vUtils.saveMetadata(metadata, versionRoot);
+
+		if (isMonorepo) {
+			const pkgsMeta = vUtils.loadPackagesMetadata(rootPath);
+			if (!pkgsMeta.packages.includes(vOptions.monorepo!.name)) {
+				pkgsMeta.packages.push(vOptions.monorepo!.name);
+				pkgsMeta.packages.sort();
+			}
+			vUtils.savePackagesMetadata(pkgsMeta, rootPath);
+
+			fs.writeFileSync(
+				path.join(rootPath, 'packages.js'),
+				vUtils.makePackagesJs(pkgsMeta.packages),
+			);
+
+			fs.writeFileSync(
+				path.join(rootPath, 'index.html'),
+				vUtils.makePackagesIndexHtml(pkgsMeta.packages),
+			);
+		}
 	});
 
 	return vOptions;

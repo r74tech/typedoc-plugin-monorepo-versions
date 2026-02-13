@@ -10,15 +10,20 @@ import { Application, JSX, type RendererHooks } from 'typedoc';
 /**
  * Injects browser js to control the behaviour of the new `select` DOM element
  * @param app
+ * @param isMonorepo
  */
-export function injectSelectJs(app: Application) {
+export function injectSelectJs(app: Application, isMonorepo = false) {
 	app.renderer.hooks.on('body.end', (ctx) => {
-		return (
-			<script
-				src={ctx.relativeURL('assets/versionsMenu.js')}
-				type="module"
-			></script>
-		);
+		const attrs: Record<string, string> = {
+			id: 'plugin-versions-script',
+			src: ctx.relativeURL('assets/versionsMenu.js'),
+			type: 'module',
+		};
+		if (isMonorepo) {
+			attrs['data-monorepo'] = 'true';
+			attrs['data-packages-url'] = ctx.relativeURL('packages.js');
+		}
+		return <script {...attrs}></script>;
 	});
 }
 
@@ -45,15 +50,20 @@ const validHookLocations: ValidHookLocation[] = [
  * Injects the new `select` dropdown into the HTML
  * @param app
  * @param domLocation
+ * @param isMonorepo
  */
 export function injectSelectHtml(
 	app: Application,
 	domLocation: ValidHookLocation,
+	isMonorepo = false,
 ) {
 	if (validHookLocations.indexOf(domLocation) > -1) {
 		if (domLocation === 'false') return;
 		app.renderer.hooks.on(domLocation, () => (
-			<select id="plugin-versions-select" name="versions"></select>
+			<>
+				{isMonorepo && <select id="plugin-packages-select" name="packages"></select>}
+				<select id="plugin-versions-select" name="versions"></select>
+			</>
 		));
 	} else {
 		app.renderer.hooks.on('head.end', () => (
@@ -66,6 +76,12 @@ export function injectSelectHtml(
 
 		app.renderer.hooks.on('pageSidebar.begin', () => (
 			<div class="tsd-ext-version-select">
+				{isMonorepo && (
+					<>
+						<label class="settings-label" for="plugin-packages-select">Package</label>
+						<select id="plugin-packages-select" name="packages"></select>
+					</>
+				)}
 				<label class="settings-label" for="plugin-versions-select">Version</label>
 				<select id="plugin-versions-select" name="versions"></select>
 			</div>
