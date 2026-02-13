@@ -1,6 +1,6 @@
 # @r74tech/typedoc-plugin-monorepo-versions
 
-Fork of [@shipgirl/typedoc-plugin-versions](https://github.com/nickolanack/typedoc-plugin-versions) / [citkane's typedoc-plugin-versions](https://github.com/citkane/typedoc-plugin-versions)
+Fork of [@shipgirl/typedoc-plugin-versions](https://github.com/shipgirlproject/typedoc-plugin-versions) / [citkane's typedoc-plugin-versions](https://github.com/citkane/typedoc-plugin-versions)
 
 
 ## Usage
