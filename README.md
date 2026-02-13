@@ -1,12 +1,12 @@
-# @shipgirl/typedoc-plugin-versions
+# @r74tech/typedoc-plugin-monorepo-versions
 
-Fork of [citkane's typedoc-plugin-versions](https://github.com/citkane/typedoc-plugin-versions)
+Fork of [@shipgirl/typedoc-plugin-versions](https://github.com/nickolanack/typedoc-plugin-versions) / [citkane's typedoc-plugin-versions](https://github.com/citkane/typedoc-plugin-versions)
 
 
 ## Usage
 
 ```jsonc
-"plugin": ["@shipgirl/typedoc-plugin-versions"],
+"plugin": ["@r74tech/typedoc-plugin-monorepo-versions"],
 "versions": { /*...options */ }
 ```
 
@@ -20,6 +20,8 @@ Fork of [citkane's typedoc-plugin-versions](https://github.com/citkane/typedoc-p
 | **_domLocation_**     | A custom DOM location to render the HTML `select` dropdown corresponding to typedoc rendererHooks, eg. "navigation.begin" | `string`  |  **no**  | Injects to left of header using vanilla js - not a typedoc render hook.                                                                                                              |
 | **packageFile**       | Pass in an alternative name convention for "package.json"                                                                 | `string`  |  **no**  | package.json                                                                                                                                                                         |
 | **makeRelativeLinks** | Create relative instead of absolute symlinks in the document out directory                                                | `boolean` |  **no**  | `false`                                                                                                                                                                              |
+| **showPatchVersions** | Show individual patch versions (e.g. v1.2.0, v1.2.1) in the dropdown instead of minor only (v1.2)                        | `boolean` |  **no**  | `false`                                                                                                                                                                              |
+| **monorepo**          | Monorepo configuration object `{ name: string, root: string }`. Enables per-package versioned docs under `{root}/{name}/` | `object`  |  **no**  | `undefined`                                                                                                                                                                          |
 
 ## "What sorcery is this?", you may ask...
 
