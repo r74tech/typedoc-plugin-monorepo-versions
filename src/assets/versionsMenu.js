@@ -17,10 +17,10 @@ const locationSplit = location.pathname.split('/');
 
 if (isMonorepo && packageSelect) {
 	try {
-		const packagesUrl = new URL(
-			scriptEl.dataset.packagesUrl,
-			document.baseURI,
-		).href;
+		// versions.js is at {root}/{package}/versions.js (imported via ../../versions.js)
+		// packages.js is at {root}/packages.js — one level above versions.js
+		const versionsDir = new URL('../../', import.meta.url);
+		const packagesUrl = new URL('../packages.js', versionsDir).href;
 		const { DOC_PACKAGES } = await import(packagesUrl);
 
 		DOC_PACKAGES.forEach((pkg) => {

@@ -25,7 +25,11 @@ const typedocOptions: Parameters<typeof Application.bootstrap>[0] = {
 describe('Unit testing for typedoc-plugin-versions', () => {
 	it('loads and parses options', async () => {
 		const app = await Application.bootstrap(typedocOptions);
-		const options = load(app);
+		load(app);
+		const options = app.options.getValue('versions') as Record<
+			string,
+			unknown
+		>;
 
 		for (const key of stubOptionKeys) {
 			expect(options).toHaveProperty(key);
@@ -300,9 +304,10 @@ describe('Monorepo mode', () => {
 	describe('makePackagesIndexHtml()', () => {
 		it('generates HTML with links to all packages', () => {
 			const result = vUtils.makePackagesIndexHtml(['pkg-a', 'pkg-b']);
-			expect(result).toContain('<a href="pkg-a/stable/">pkg-a</a>');
-			expect(result).toContain('<a href="pkg-b/stable/">pkg-b</a>');
+			expect(result).toContain('href="pkg-a/stable/"');
+			expect(result).toContain('href="pkg-b/stable/"');
 			expect(result).toContain('<!DOCTYPE html>');
+			expect(result).toContain('pkg-card');
 		});
 	});
 

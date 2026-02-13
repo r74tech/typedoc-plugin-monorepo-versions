@@ -32,40 +32,52 @@ export function load(app: Application) {
 		},
 	});
 
-	const vOptions = app.options.getValue('versions') as versionsOptions;
+	// Resolved lazily in bootstrapEnd after typedoc.json values are applied.
+	// Hook callbacks capture these variables via closure and read them at render time.
+	let vOptions: versionsOptions;
+	let rootPath: string;
+	let packageRootPath: string | undefined;
+	let targetPath: string;
+	let versionRoot: string;
+	let isMonorepo = false;
 
-	if (vOptions.monorepo) {
-		if (
-			!vOptions.monorepo.name ||
-			!/^[a-zA-Z0-9_-]+$/.test(vOptions.monorepo.name)
-		) {
-			throw new Error(
-				'monorepo.name is required and must contain only alphanumeric characters, hyphens, and underscores',
-			);
-		}
-		if (!vOptions.monorepo.root) {
-			throw new Error('monorepo.root is required');
-		}
-	}
-
-	const isMonorepo = !!vOptions.monorepo;
-
-	vHooks.injectSelectJs(app, isMonorepo);
-	vHooks.injectSelectHtml(app, vOptions.domLocation!, isMonorepo);
-
-	const packageFile = vOptions.packageFile ?? 'package.json';
-	const packagePath = path.join(process.cwd(), packageFile);
-	const packageVersion = fs.readJSONSync(packagePath).version;
-	const { rootPath, packageRootPath, targetPath } = vUtils.getPaths(
+	// Hooks must be registered during load(), but callbacks run at render time
+	// when bootstrapEnd has already set the closure variables.
+	vHooks.injectSelectJs(app, () => isMonorepo);
+	vHooks.injectSelectHtml(
 		app,
-		packageVersion,
-		vOptions.monorepo,
+		() => (vOptions?.domLocation ?? 'false') as vHooks.ValidHookLocation,
+		() => isMonorepo,
 	);
 
-	// The doc root for version management: packageRootPath in monorepo mode, rootPath in single mode
-	const versionRoot = packageRootPath ?? rootPath;
-
 	app.on('bootstrapEnd', (instance) => {
+		vOptions = instance.options.getValue('versions') as versionsOptions;
+
+		if (vOptions.monorepo) {
+			if (
+				!vOptions.monorepo.name ||
+				!/^[a-zA-Z0-9_-]+$/.test(vOptions.monorepo.name)
+			) {
+				throw new Error(
+					'monorepo.name is required and must contain only alphanumeric characters, hyphens, and underscores',
+				);
+			}
+			if (!vOptions.monorepo.root) {
+				throw new Error('monorepo.root is required');
+			}
+		}
+
+		isMonorepo = !!vOptions.monorepo;
+
+		const packageFile = vOptions.packageFile ?? 'package.json';
+		const packagePath = path.join(process.cwd(), packageFile);
+		const packageVersion = fs.readJSONSync(packagePath).version;
+		const paths = vUtils.getPaths(app, packageVersion, vOptions.monorepo);
+		rootPath = paths.rootPath;
+		packageRootPath = paths.packageRootPath;
+		targetPath = paths.targetPath;
+		versionRoot = packageRootPath ?? rootPath;
+
 		if (targetPath) instance.options['_values']['out'] = targetPath;
 	});
 
@@ -102,7 +114,6 @@ export function load(app: Application) {
 		const jsVersionKeys = vUtils.makeJsKeys(metadata);
 		fs.writeFileSync(path.join(versionRoot, 'versions.js'), jsVersionKeys);
 
-		// Package-level index.html: redirect to stable/ or dev/
 		fs.writeFileSync(
 			path.join(versionRoot, 'index.html'),
 			`<meta http-equiv="refresh" content="0; url=${
@@ -131,8 +142,6 @@ export function load(app: Application) {
 			);
 		}
 	});
-
-	return vOptions;
 }
 
 export { vUtils as utils, vHooks as hook };
