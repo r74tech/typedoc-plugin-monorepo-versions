@@ -1,6 +1,6 @@
 {
 	"name": "@r74tech/typedoc-plugin-monorepo-versions",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "It keeps track of your document builds and provides a select menu for versions",
 	"main": "./index.js",
 	"types": "./index.d.ts",
