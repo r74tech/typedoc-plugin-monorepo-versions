@@ -8,6 +8,7 @@ import {
 	jsKeys,
 	optionsPath,
 	stubOptionKeys,
+	stubPackageFile,
 	stubPathKeys,
 	stubRootPath,
 	stubSemanticLinks,
@@ -82,6 +83,9 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 			const metadata = vUtils.refreshMetadata(
 				vUtils.loadMetadata(docsPath),
 				docsPath,
+				'auto',
+				'auto',
+				stubPackageFile,
 			);
 			expect(vUtils.makeJsKeys(metadata)).toEqual(jsKeys);
 		});
@@ -121,32 +125,62 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 		});
 		const metadata = vUtils.loadMetadata(docsPath);
 		it('infers stable version automatically', () => {
-			expect(vUtils.refreshMetadata(metadata, docsPath).stable).toEqual(
-				undefined,
-			);
 			expect(
-				vUtils.refreshMetadata(metadata, docsPath, '0.2.3').stable,
+				vUtils.refreshMetadata(
+					metadata,
+					docsPath,
+					'auto',
+					'auto',
+					stubPackageFile,
+				).stable,
+			).toEqual(undefined);
+			expect(
+				vUtils.refreshMetadata(
+					metadata,
+					docsPath,
+					'0.2.3',
+					'auto',
+					stubPackageFile,
+				).stable,
 			).toEqual('v0.2.3');
 			expect(
-				vUtils.refreshMetadata(metadata, docsPath, '1.0.0').stable,
+				vUtils.refreshMetadata(
+					metadata,
+					docsPath,
+					'1.0.0',
+					'auto',
+					stubPackageFile,
+				).stable,
 			).toEqual(undefined);
 		});
 		it('infers dev version automatically', () => {
-			expect(vUtils.refreshMetadata(metadata, docsPath).dev).toEqual(
-				'v0.10.1',
-			);
-			const currentVersion = process.env.npm_package_version ?? '0.3.2';
+			expect(
+				vUtils.refreshMetadata(
+					metadata,
+					docsPath,
+					'auto',
+					'auto',
+					stubPackageFile,
+				).dev,
+			).toEqual('v0.10.1');
+			const currentVersion = '0.3.2';
 			expect(
 				vUtils.refreshMetadata(
 					metadata,
 					docsPath,
 					undefined,
 					currentVersion,
+					stubPackageFile,
 				).dev,
 			).toEqual(`v${currentVersion}` as const);
 			expect(
-				vUtils.refreshMetadata(metadata, docsPath, undefined, '1.0.0')
-					.dev,
+				vUtils.refreshMetadata(
+					metadata,
+					docsPath,
+					undefined,
+					'1.0.0',
+					stubPackageFile,
+				).dev,
 			).toEqual('v0.10.1');
 		});
 	});
