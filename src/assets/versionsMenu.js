@@ -17,8 +17,10 @@ const locationSplit = location.pathname.split('/');
 
 if (isMonorepo && packageSelect) {
 	try {
-		const packagesUrl = new URL(scriptEl.dataset.packagesUrl, scriptEl.src)
-			.href;
+		const packagesUrl = new URL(
+			scriptEl.dataset.packagesUrl,
+			document.baseURI,
+		).href;
 		const { DOC_PACKAGES } = await import(packagesUrl);
 
 		DOC_PACKAGES.forEach((pkg) => {

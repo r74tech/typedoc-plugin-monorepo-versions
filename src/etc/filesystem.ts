@@ -35,9 +35,9 @@ export function makeAliasLink(
 	if (fs.lstatSync(target, { throwIfNoEntry: false })?.isSymbolicLink())
 		fs.unlinkSync(target);
 
-	if (makeRelativeSymlinks) {
+	if (makeRelativeSymlinks && process.platform !== 'win32') {
 		const relSource = path.relative(path.dirname(target), source);
-		fs.ensureSymlinkSync(relSource, target, 'junction');
+		fs.ensureSymlinkSync(relSource, target);
 	} else {
 		fs.ensureSymlinkSync(source, target, 'junction');
 	}
@@ -82,9 +82,9 @@ export function makeMinorVersionLinks(
 		if (fs.lstatSync(target, { throwIfNoEntry: false })?.isSymbolicLink())
 			fs.unlinkSync(target);
 
-		if (makeRelativeSymlinks) {
+		if (makeRelativeSymlinks && process.platform !== 'win32') {
 			const relSrc = path.relative(path.dirname(target), src);
-			fs.ensureSymlinkSync(relSrc, target, 'junction');
+			fs.ensureSymlinkSync(relSrc, target);
 		} else {
 			fs.ensureSymlinkSync(src, target, 'junction');
 		}
