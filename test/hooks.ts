@@ -1,37 +1,49 @@
-import 'source-map-support/register';
-import { jest, beforeAll, afterEach, afterAll } from '@jest/globals';
-process.env.Node = 'test';
-
+import { beforeAll, afterAll, mock } from 'bun:test';
 import fs from 'fs-extra';
 import path from 'path';
-import { docsPath, stubVersions } from './stubs/stubs.js';
+import {
+	docsPath,
+	stubVersions,
+	monorepoDocsPath,
+	monorepoPackages,
+	monorepoVersionsPkgA,
+	monorepoVersionsPkgB,
+} from './stubs/stubs.js';
 
-jest.spyOn(console, 'error').mockClear();
-jest.spyOn(console, 'warn').mockClear();
-jest.spyOn(console, 'log').mockClear();
+mock.module('console', () => ({
+	error: () => {},
+	warn: () => {},
+	log: () => {},
+}));
 
 beforeAll(() => {
-	deleteFolders([docsPath]);
+	deleteFolders([docsPath, monorepoDocsPath]);
+
+	// Single-mode stubs
 	fs.mkdirSync(docsPath);
 	stubVersions.forEach((version) => {
 		fs.mkdirSync(path.join(docsPath, version));
 	});
-});
 
-afterEach(() => {
-	jest.restoreAllMocks();
-	jest.spyOn(console, 'error').mockClear();
-	jest.spyOn(console, 'warn').mockClear();
-	jest.spyOn(console, 'log').mockClear();
+	// Monorepo stubs
+	fs.mkdirSync(monorepoDocsPath, { recursive: true });
+	for (const pkg of monorepoPackages) {
+		const pkgDir = path.join(monorepoDocsPath, pkg);
+		fs.mkdirSync(pkgDir, { recursive: true });
+		const versions =
+			pkg === 'pkg-a' ? monorepoVersionsPkgA : monorepoVersionsPkgB;
+		for (const ver of versions) {
+			fs.mkdirSync(path.join(pkgDir, ver), { recursive: true });
+		}
+	}
 });
 
 afterAll(() => {
-	deleteFolders([docsPath]);
+	deleteFolders([docsPath, monorepoDocsPath]);
 });
 
 const deleteFolders = (folders: string[]) => {
 	folders.forEach((folder) => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		fs.existsSync(folder) && fs.rmSync(folder, { recursive: true });
+		if (fs.existsSync(folder)) fs.rmSync(folder, { recursive: true });
 	});
 };

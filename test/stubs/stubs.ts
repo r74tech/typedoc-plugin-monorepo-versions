@@ -13,8 +13,10 @@ export const stubOptionKeys = [
 	'domLocation',
 	'packageFile',
 	'makeRelativeLinks',
+	'showPatchVersions',
+	'monorepo',
 ];
-export const stubPathKeys = ['rootPath', 'targetPath'];
+export const stubPathKeys = ['rootPath', 'packageRootPath', 'targetPath'];
 export const stubRootPath =
 	process.platform === 'win32' ? '\\test\\stubs\\docs' : '/test/stubs/docs';
 export const stubTargetPath = (version: string) =>
@@ -30,3 +32,9 @@ export const DOC_VERSIONS = [
 	'v0.0',
 ];
 `;
+
+// Monorepo stubs
+export const monorepoDocsPath = path.join(stubsPath, 'monorepo-docs');
+export const monorepoPackages = ['pkg-a', 'pkg-b'];
+export const monorepoVersionsPkgA = ['v0.1.0', 'v0.2.0'];
+export const monorepoVersionsPkgB = ['v1.0.0'];

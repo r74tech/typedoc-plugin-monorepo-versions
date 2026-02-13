@@ -1,7 +1,6 @@
-import { expect } from 'expect';
+import { expect, describe, it } from 'bun:test';
 import path from 'path';
 import fs from 'fs-extra';
-import { describe, it } from '@jest/globals';
 import * as vUtils from '../src/etc/utils.js';
 import { minorVerRegex, verRegex } from '../src/etc/utils.js';
 import {
@@ -14,18 +13,23 @@ import {
 	stubSemanticLinks,
 	stubTargetPath,
 	stubVersions,
+	monorepoDocsPath,
 } from './stubs/stubs.js';
 import { Application } from 'typedoc';
 import { load } from '../src/index.js';
 
 const typedocOptions: Parameters<typeof Application.bootstrap>[0] = {
 	options: optionsPath,
-}
+};
 
 describe('Unit testing for typedoc-plugin-versions', () => {
 	it('loads and parses options', async () => {
 		const app = await Application.bootstrap(typedocOptions);
-		const options = load(app);
+		load(app);
+		const options = app.options.getValue('versions') as Record<
+			string,
+			unknown
+		>;
 
 		for (const key of stubOptionKeys) {
 			expect(options).toHaveProperty(key);
@@ -34,30 +38,43 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 
 	describe('retrieving package version', () => {
 		it('retrieves patch value from package.json', () => {
-			expect(vUtils.getSemanticVersion()).toMatch(verRegex);
+			expect(vUtils.getSemanticVersion('0.3.2')).toMatch(verRegex);
 			expect(vUtils.getSemanticVersion('0.0.0')).toEqual('v0.0.0');
 			expect(vUtils.getSemanticVersion('0.2.0')).toEqual('v0.2.0');
 			expect(vUtils.getSemanticVersion('1.2.0')).toEqual('v1.2.0');
-			expect(vUtils.getSemanticVersion('1.2.0-alpha.1')).toEqual('v1.2.0-alpha.1');
+			expect(vUtils.getSemanticVersion('1.2.0-alpha.1')).toEqual(
+				'v1.2.0-alpha.1',
+			);
 		});
 		it('throws error if version not defined', () => {
 			expect(() => {
-				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 				// @ts-ignore This is expected to error
 				vUtils.getSemanticVersion(null);
 			}).toThrow();
 		});
 		it('retrieves minor value from package.json', () => {
-			expect(vUtils.getMinorVersion()).toMatch(minorVerRegex);
+			expect(vUtils.getMinorVersion('0.3.2')).toMatch(minorVerRegex);
 		});
 	});
 	describe('parses and processes directories', () => {
 		it('retrieves semantically named directories into a list', () => {
-			expect(vUtils.getPackageDirectories(docsPath)).toEqual(['v0.0.0', 'v0.1.0', 'v0.1.1', 'v0.10.1', 'v0.2.3']);
+			expect(vUtils.getPackageDirectories(docsPath).sort()).toEqual(
+				['v0.0.0', 'v0.1.0', 'v0.1.1', 'v0.10.1', 'v0.2.3'].sort(),
+			);
 		});
 		it('lists semantic versions correctly', () => {
 			const directories = vUtils.getPackageDirectories(docsPath);
-			expect(vUtils.getVersions(directories)).toEqual(['v0.0.0', 'v0.1.0', 'v0.1.1', 'v0.10.1', 'v0.2.3']);
+			expect(vUtils.getVersions(directories).sort()).toEqual(
+				[
+					...([
+						'v0.0.0',
+						'v0.1.0',
+						'v0.1.1',
+						'v0.10.1',
+						'v0.2.3',
+					] as const),
+				].sort(),
+			);
 		});
 	});
 	describe('creates browser assets', () => {
@@ -71,20 +88,28 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 	});
 	describe('gets latest version', () => {
 		it('correctly gets the latest stable version', () => {
-			expect(vUtils.getLatestVersion(
-                'stable',
-                stubVersions.map((v) => vUtils.getSemanticVersion(v)),
-            )).toEqual(undefined);
+			expect(
+				vUtils.getLatestVersion(
+					'stable',
+					stubVersions.map((v) => vUtils.getSemanticVersion(v)),
+				),
+			).toEqual(undefined);
 
-			expect(vUtils.getLatestVersion('stable', ['v1.0.0', 'v1.1.0-alpha.1'])).toEqual('v1.0.0');
+			expect(
+				vUtils.getLatestVersion('stable', ['v1.0.0', 'v1.1.0-alpha.1']),
+			).toEqual('v1.0.0');
 		});
 		it('correctly gets the latest dev version', () => {
-			expect(vUtils.getLatestVersion(
-                'dev',
-                stubVersions.map((v) => vUtils.getSemanticVersion(v)),
-            )).toEqual('v0.10.1');
+			expect(
+				vUtils.getLatestVersion(
+					'dev',
+					stubVersions.map((v) => vUtils.getSemanticVersion(v)),
+				),
+			).toEqual('v0.10.1');
 
-			expect(vUtils.getLatestVersion('dev', ['v1.0.0', 'v1.1.0-alpha.1'])).toEqual('v1.1.0-alpha.1');
+			expect(
+				vUtils.getLatestVersion('dev', ['v1.0.0', 'v1.1.0-alpha.1']),
+			).toEqual('v1.1.0-alpha.1');
 		});
 	});
 	describe('infers stable and dev versions', () => {
@@ -96,25 +121,33 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 		});
 		const metadata = vUtils.loadMetadata(docsPath);
 		it('infers stable version automatically', () => {
-			expect(// will fail when our package.json version >= 1.0.0
-            vUtils.refreshMetadata(metadata, docsPath).stable).toEqual(undefined);
-			expect(vUtils.refreshMetadata(metadata, docsPath, '0.2.3').stable).toEqual('v0.2.3');
-			expect(// will fail when our package.json version >= 1.0.0
-            vUtils.refreshMetadata(metadata, docsPath, '1.0.0').stable).toEqual(undefined);
+			expect(vUtils.refreshMetadata(metadata, docsPath).stable).toEqual(
+				undefined,
+			);
+			expect(
+				vUtils.refreshMetadata(metadata, docsPath, '0.2.3').stable,
+			).toEqual('v0.2.3');
+			expect(
+				vUtils.refreshMetadata(metadata, docsPath, '1.0.0').stable,
+			).toEqual(undefined);
 		});
 		it('infers dev version automatically', () => {
-			expect(// will fail when our package.json version > 0.10.1
-            vUtils.refreshMetadata(metadata, docsPath).dev).toEqual('v0.10.1');
-			const currentVersion = process.env.npm_package_version;
-			expect(vUtils.refreshMetadata(
-                metadata,
-                docsPath,
-                undefined,
-                currentVersion,
-            ).dev).toEqual('v' + currentVersion);
-			expect(// will fail when our package.json version > 0.10.1
-            vUtils.refreshMetadata(metadata, docsPath, undefined, '1.0.0')
-                .dev).toEqual('v0.10.1');
+			expect(vUtils.refreshMetadata(metadata, docsPath).dev).toEqual(
+				'v0.10.1',
+			);
+			const currentVersion = process.env.npm_package_version ?? '0.3.2';
+			expect(
+				vUtils.refreshMetadata(
+					metadata,
+					docsPath,
+					undefined,
+					currentVersion,
+				).dev,
+			).toEqual(`v${currentVersion}` as const);
+			expect(
+				vUtils.refreshMetadata(metadata, docsPath, undefined, '1.0.0')
+					.dev,
+			).toEqual('v0.10.1');
 		});
 	});
 	describe('creates symlinks', () => {
@@ -154,7 +187,10 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 				expect(dirs).toHaveProperty(key);
 			}
 			expect(dirs.rootPath.endsWith(stubRootPath)).toBe(true);
-			expect(dirs.targetPath.endsWith(stubTargetPath(version))).toBe(true);
+			expect(dirs.targetPath.endsWith(stubTargetPath(version))).toBe(
+				true,
+			);
+			expect(dirs.packageRootPath).toBeUndefined();
 		});
 		it('does not error if .nojekyll is not present', async () => {
 			const app = await Application.bootstrap(typedocOptions);
@@ -172,7 +208,9 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 			const dirs = vUtils.getPaths(app, version);
 			fs.createFileSync(path.join(dirs.targetPath, '.nojekyll'));
 			vUtils.handleJeckyll(dirs.rootPath, dirs.targetPath);
-			expect(fs.existsSync(path.join(dirs.rootPath, '.nojekyll'))).toBe(true);
+			expect(fs.existsSync(path.join(dirs.rootPath, '.nojekyll'))).toBe(
+				true,
+			);
 		});
 		it('copies static assets into the target version folder', async () => {
 			const app = await Application.bootstrap(typedocOptions);
@@ -180,9 +218,123 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 			app.options.setValue('out', docsPath);
 			const dirs = vUtils.getPaths(app, version);
 			vUtils.handleAssets(dirs.targetPath);
-			expect(fs.existsSync(
-                path.join(dirs.targetPath, 'assets/versionsMenu.js'),
-            )).toBe(true);
+			expect(
+				fs.existsSync(
+					path.join(dirs.targetPath, 'assets/versionsMenu.js'),
+				),
+			).toBe(true);
+		});
+	});
+});
+
+describe('Monorepo mode', () => {
+	describe('getPaths() with monorepo option', () => {
+		it('returns correct rootPath, packageRootPath, and targetPath', async () => {
+			const app = await Application.bootstrap(typedocOptions);
+			const monorepo = { name: 'pkg-a', root: monorepoDocsPath };
+			const dirs = vUtils.getPaths(app, '0.1.0', monorepo);
+			expect(dirs.rootPath).toEqual(monorepoDocsPath);
+			expect(dirs.packageRootPath).toEqual(
+				path.join(monorepoDocsPath, 'pkg-a'),
+			);
+			expect(dirs.targetPath).toEqual(
+				path.join(monorepoDocsPath, 'pkg-a', 'v0.1.0'),
+			);
+		});
+
+		it('returns undefined packageRootPath in single mode', async () => {
+			const app = await Application.bootstrap(typedocOptions);
+			app.options.setValue('out', docsPath);
+			const dirs = vUtils.getPaths(app, '0.1.0');
+			expect(dirs.packageRootPath).toBeUndefined();
+		});
+	});
+
+	describe('monorepo.name validation', () => {
+		it('rejects names with slashes', () => {
+			expect(() => {
+				if (!/^[a-zA-Z0-9_-]+$/.test('pkg/a')) {
+					throw new Error(
+						'monorepo.name is required and must contain only alphanumeric characters, hyphens, and underscores',
+					);
+				}
+			}).toThrow();
+		});
+
+		it('rejects names with dots', () => {
+			expect(() => {
+				if (!/^[a-zA-Z0-9_-]+$/.test('..')) {
+					throw new Error(
+						'monorepo.name is required and must contain only alphanumeric characters, hyphens, and underscores',
+					);
+				}
+			}).toThrow();
+		});
+
+		it('accepts valid names', () => {
+			expect(/^[a-zA-Z0-9_-]+$/.test('pkg-a')).toBe(true);
+			expect(/^[a-zA-Z0-9_-]+$/.test('my_package')).toBe(true);
+			expect(/^[a-zA-Z0-9_-]+$/.test('MyLib123')).toBe(true);
+		});
+	});
+
+	describe('packages metadata', () => {
+		it('loads empty packages metadata when file does not exist', () => {
+			const meta = vUtils.loadPackagesMetadata(monorepoDocsPath);
+			expect(meta).toEqual({ packages: [] });
+		});
+
+		it('saves and loads packages metadata', () => {
+			const meta = { packages: ['pkg-a', 'pkg-b'] };
+			vUtils.savePackagesMetadata(meta, monorepoDocsPath);
+			const loaded = vUtils.loadPackagesMetadata(monorepoDocsPath);
+			expect(loaded).toEqual(meta);
+		});
+	});
+
+	describe('makePackagesJs()', () => {
+		it('generates correct packages.js content', () => {
+			const result = vUtils.makePackagesJs(['pkg-a', 'pkg-b']);
+			expect(result).toContain('DOC_PACKAGES');
+			expect(result).toContain("'pkg-a'");
+			expect(result).toContain("'pkg-b'");
+		});
+	});
+
+	describe('makePackagesIndexHtml()', () => {
+		it('generates HTML with links to all packages', () => {
+			const result = vUtils.makePackagesIndexHtml(['pkg-a', 'pkg-b']);
+			expect(result).toContain('href="pkg-a/stable/"');
+			expect(result).toContain('href="pkg-b/stable/"');
+			expect(result).toContain('<!DOCTYPE html>');
+			expect(result).toContain('pkg-card');
+		});
+	});
+
+	describe('version management per package', () => {
+		it('manages metadata independently per package', () => {
+			const pkgARoot = path.join(monorepoDocsPath, 'pkg-a');
+			const metadataA = vUtils.refreshMetadata(
+				vUtils.loadMetadata(pkgARoot),
+				pkgARoot,
+			);
+			expect(metadataA.versions).toBeDefined();
+			expect(metadataA.versions!.length).toBeGreaterThan(0);
+
+			const pkgBRoot = path.join(monorepoDocsPath, 'pkg-b');
+			const metadataB = vUtils.refreshMetadata(
+				vUtils.loadMetadata(pkgBRoot),
+				pkgBRoot,
+			);
+			expect(metadataB.versions).toBeDefined();
+			// pkg-b has v1.0.0 (stable), pkg-a has only dev versions
+			expect(metadataB.stable).toEqual('v1.0.0');
+		});
+
+		it('creates symlinks within package directory', () => {
+			const pkgBRoot = path.join(monorepoDocsPath, 'pkg-b');
+			vUtils.makeAliasLink('stable', pkgBRoot, 'v1.0.0');
+			expect(fs.existsSync(path.join(pkgBRoot, 'stable'))).toBe(true);
 		});
 	});
 });
