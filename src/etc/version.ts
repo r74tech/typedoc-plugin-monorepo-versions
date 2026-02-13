@@ -99,7 +99,10 @@ export function getPackageDirectories(docRoot: string): string[] {
 /**
  * Gets the {@link version} a given symlink is pointing to.
  */
-export function getSymlinkVersion(symlink: string, docRoot: string): version | undefined {
+export function getSymlinkVersion(
+	symlink: string,
+	docRoot: string,
+): version | undefined {
 	const symlinkPath = path.join(docRoot, symlink);
 	if (
 		fs.pathExistsSync(symlinkPath) &&

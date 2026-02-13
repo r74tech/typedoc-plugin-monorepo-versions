@@ -32,11 +32,16 @@ export function load(app: Application) {
 		},
 	});
 
-	const vOptions = app.options.getValue("versions") as versionsOptions;
+	const vOptions = app.options.getValue('versions') as versionsOptions;
 
 	if (vOptions.monorepo) {
-		if (!vOptions.monorepo.name || !/^[a-zA-Z0-9_-]+$/.test(vOptions.monorepo.name)) {
-			throw new Error('monorepo.name is required and must contain only alphanumeric characters, hyphens, and underscores');
+		if (
+			!vOptions.monorepo.name ||
+			!/^[a-zA-Z0-9_-]+$/.test(vOptions.monorepo.name)
+		) {
+			throw new Error(
+				'monorepo.name is required and must contain only alphanumeric characters, hyphens, and underscores',
+			);
 		}
 		if (!vOptions.monorepo.root) {
 			throw new Error('monorepo.root is required');
@@ -51,12 +56,16 @@ export function load(app: Application) {
 	const packageFile = vOptions.packageFile ?? 'package.json';
 	const packagePath = path.join(process.cwd(), packageFile);
 	const packageVersion = fs.readJSONSync(packagePath).version;
-	const { rootPath, packageRootPath, targetPath } = vUtils.getPaths(app, packageVersion, vOptions.monorepo);
+	const { rootPath, packageRootPath, targetPath } = vUtils.getPaths(
+		app,
+		packageVersion,
+		vOptions.monorepo,
+	);
 
 	// The doc root for version management: packageRootPath in monorepo mode, rootPath in single mode
 	const versionRoot = packageRootPath ?? rootPath;
 
-	app.on("bootstrapEnd", (instance) => {
+	app.on('bootstrapEnd', (instance) => {
 		if (targetPath) instance.options['_values']['out'] = targetPath;
 	});
 

@@ -61,7 +61,12 @@ export function injectSelectHtml(
 		if (domLocation === 'false') return;
 		app.renderer.hooks.on(domLocation, () => (
 			<>
-				{isMonorepo && <select id="plugin-packages-select" name="packages"></select>}
+				{isMonorepo && (
+					<select
+						id="plugin-packages-select"
+						name="packages"
+					></select>
+				)}
 				<select id="plugin-versions-select" name="versions"></select>
 			</>
 		));
@@ -78,11 +83,21 @@ export function injectSelectHtml(
 			<div class="tsd-ext-version-select">
 				{isMonorepo && (
 					<>
-						<label class="settings-label" for="plugin-packages-select">Package</label>
-						<select id="plugin-packages-select" name="packages"></select>
+						<label
+							class="settings-label"
+							for="plugin-packages-select"
+						>
+							Package
+						</label>
+						<select
+							id="plugin-packages-select"
+							name="packages"
+						></select>
 					</>
 				)}
-				<label class="settings-label" for="plugin-versions-select">Version</label>
+				<label class="settings-label" for="plugin-versions-select">
+					Version
+				</label>
 				<select id="plugin-versions-select" name="versions"></select>
 			</div>
 		));

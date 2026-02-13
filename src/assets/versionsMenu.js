@@ -17,7 +17,8 @@ const locationSplit = location.pathname.split('/');
 
 if (isMonorepo && packageSelect) {
 	try {
-		const packagesUrl = new URL(scriptEl.dataset.packagesUrl, scriptEl.src).href;
+		const packagesUrl = new URL(scriptEl.dataset.packagesUrl, scriptEl.src)
+			.href;
 		const { DOC_PACKAGES } = await import(packagesUrl);
 
 		DOC_PACKAGES.forEach((pkg) => {
@@ -28,7 +29,9 @@ if (isMonorepo && packageSelect) {
 		});
 
 		// Detect current package from URL: /{package}/{version}/...
-		const currentPackage = DOC_PACKAGES.find((pkg) => locationSplit.includes(pkg));
+		const currentPackage = DOC_PACKAGES.find((pkg) =>
+			locationSplit.includes(pkg),
+		);
 		if (currentPackage) {
 			packageSelect.value = currentPackage;
 		}
@@ -45,7 +48,10 @@ if (isMonorepo && packageSelect) {
 					newPaths[pkgIndex + 1] = 'stable';
 					newPaths.length = pkgIndex + 2;
 				}
-				const newUrl = new URL(newPaths.join('/'), window.location.origin);
+				const newUrl = new URL(
+					newPaths.join('/'),
+					window.location.origin,
+				);
 				window.location.assign(newUrl);
 			}
 		};
@@ -55,12 +61,17 @@ if (isMonorepo && packageSelect) {
 	}
 }
 
-const thisVersion = locationSplit.find((path) => ['stable', 'dev', ...DOC_VERSIONS].includes(path));
+const thisVersion = locationSplit.find((path) =>
+	['stable', 'dev', ...DOC_VERSIONS].includes(path),
+);
 versionSelect.value = DOC_VERSIONS.includes(thisVersion)
 	? thisVersion
 	: DOC_VERSIONS[0];
 versionSelect.onchange = () => {
-	const newPaths = window.location.pathname.replace(`/${thisVersion}/`, `/${versionSelect.value}/`);
+	const newPaths = window.location.pathname.replace(
+		`/${thisVersion}/`,
+		`/${versionSelect.value}/`,
+	);
 	const newUrl = new URL(newPaths, window.location.origin);
 	window.location.assign(newUrl);
 };

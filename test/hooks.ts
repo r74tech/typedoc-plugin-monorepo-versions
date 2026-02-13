@@ -30,7 +30,8 @@ beforeAll(() => {
 	for (const pkg of monorepoPackages) {
 		const pkgDir = path.join(monorepoDocsPath, pkg);
 		fs.mkdirSync(pkgDir, { recursive: true });
-		const versions = pkg === 'pkg-a' ? monorepoVersionsPkgA : monorepoVersionsPkgB;
+		const versions =
+			pkg === 'pkg-a' ? monorepoVersionsPkgA : monorepoVersionsPkgB;
 		for (const ver of versions) {
 			fs.mkdirSync(path.join(pkgDir, ver), { recursive: true });
 		}

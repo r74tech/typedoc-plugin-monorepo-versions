@@ -37,4 +37,8 @@ export {
 	handleAssets,
 } from './filesystem.js';
 
-export { makeJsKeys, makePackagesJs, makePackagesIndexHtml } from './js-generator.js';
+export {
+	makeJsKeys,
+	makePackagesJs,
+	makePackagesIndexHtml,
+} from './js-generator.js';

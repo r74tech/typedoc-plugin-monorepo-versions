@@ -7,7 +7,12 @@
 import path from 'path';
 import fs from 'fs-extra';
 import semver from 'semver';
-import type { version, semanticAlias, metadata, packagesMetadata } from '../types.js';
+import type {
+	version,
+	semanticAlias,
+	metadata,
+	packagesMetadata,
+} from '../types.js';
 import {
 	getSemanticVersion,
 	getLatestVersion,
@@ -70,33 +75,31 @@ export function refreshMetadataVersions(
 	docRoot: string,
 	packageFile: string,
 ) {
-	return (
-		[
-			...versions
-				.filter((version) => {
-					try {
-						const vPath = path.join(docRoot, version);
-						return (
-							fs.pathExistsSync(vPath) &&
-							fs.statSync(vPath).isDirectory() &&
-							semver.valid(version, true) !== null
-						);
-					} catch {
-						return false;
-					}
-				})
-				.map((version) => getSemanticVersion(version)),
+	return [
+		...versions
+			.filter((version) => {
+				try {
+					const vPath = path.join(docRoot, version);
+					return (
+						fs.pathExistsSync(vPath) &&
+						fs.statSync(vPath).isDirectory() &&
+						semver.valid(version, true) !== null
+					);
+				} catch {
+					return false;
+				}
+			})
+			.map((version) => getSemanticVersion(version)),
 
-			...getVersions(getPackageDirectories(docRoot)),
+		...getVersions(getPackageDirectories(docRoot)),
 
-			getSemanticVersion(getPackageVersion(packageFile)),
+		getSemanticVersion(getPackageVersion(packageFile)),
 
-			getSymlinkVersion('stable', docRoot),
-			getSymlinkVersion('dev', docRoot),
-		]
-			.filter((v, i, s) => v !== undefined && s.indexOf(v) === i)
-			.sort((a, b) => semver.rcompare(a!, b!))
-	);
+		getSymlinkVersion('stable', docRoot),
+		getSymlinkVersion('dev', docRoot),
+	]
+		.filter((v, i, s) => v !== undefined && s.indexOf(v) === i)
+		.sort((a, b) => semver.rcompare(a!, b!));
 }
 
 /**
@@ -160,6 +163,9 @@ export function loadPackagesMetadata(docRoot: string): packagesMetadata {
 /**
  * Saves a given {@link packagesMetadata} object to disk.
  */
-export function savePackagesMetadata(meta: packagesMetadata, docRoot: string): void {
+export function savePackagesMetadata(
+	meta: packagesMetadata,
+	docRoot: string,
+): void {
 	fs.writeJsonSync(getPackagesMetadataPath(docRoot), meta);
 }

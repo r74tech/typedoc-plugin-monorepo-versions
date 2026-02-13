@@ -95,7 +95,11 @@ export function makeMinorVersionLinks(
  * Resolve the root document path and document build path.
  * In monorepo mode, returns an additional packageRootPath.
  */
-export function getPaths(app: Application, version: string, monorepo?: monorepoOptions) {
+export function getPaths(
+	app: Application,
+	version: string,
+	monorepo?: monorepoOptions,
+) {
 	if (monorepo) {
 		const rootPath = path.resolve(process.cwd(), monorepo.root);
 		const packageRootPath = path.join(rootPath, monorepo.name);
@@ -127,7 +131,10 @@ export function handleJeckyll(rootPath: string, targetPath: string): void {
 /**
  * Copies static assets to the document build folder.
  */
-export function handleAssets(targetPath: string, srcDir: string = path.dirname(fileURLToPath(import.meta.url))) {
+export function handleAssets(
+	targetPath: string,
+	srcDir: string = path.dirname(fileURLToPath(import.meta.url)),
+) {
 	const sourceAsset = path.join(srcDir, '../assets/versionsMenu.js');
 	fs.ensureDirSync(path.join(targetPath, 'assets'));
 	fs.copyFileSync(

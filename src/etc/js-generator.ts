@@ -15,8 +15,8 @@ export function makeJsKeys(metadata: metadata): string {
 	const alias = metadata.stable ? 'stable' : 'dev';
 	const keys = [
 		alias,
-		...metadata.versions!
-			.map((v) => getMinorVersion(v))
+		...metadata
+			.versions!.map((v) => getMinorVersion(v))
 			.filter((v, i, s) => s.indexOf(v) === i),
 	];
 	if (alias !== 'dev' && metadata.dev) {
@@ -66,5 +66,7 @@ export function makePackagesIndexHtml(packages: string[]): string {
 		'	</ul>',
 		'</body>',
 		'</html>',
-	].join('\n').concat('\n');
+	]
+		.join('\n')
+		.concat('\n');
 }
