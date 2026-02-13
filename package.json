@@ -1,5 +1,5 @@
 {
-	"name": "@shipgirl/typedoc-plugin-versions",
+	"name": "@r74tech/typedoc-plugin-monorepo-versions",
 	"version": "0.3.2",
 	"description": "It keeps track of your document builds and provides a select menu for versions",
 	"main": "./index.js",
@@ -16,9 +16,9 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/shipgirlproject/typedoc-plugin-versions.git"
+		"url": "git+https://github.com/r74tech/typedoc-plugin-monorepo-versions.git"
 	},
-	"homepage": "https://github.com/shipgirlproject/typedoc-plugin-versions#readme",
+	"homepage": "https://github.com/r74tech/typedoc-plugin-monorepo-versions#readme",
 	"engines": {
 		"npm": ">=6.0.0",
 		"node": ">=14.0.0"
