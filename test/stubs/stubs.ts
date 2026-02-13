@@ -13,6 +13,7 @@ export const stubOptionKeys = [
 	'domLocation',
 	'packageFile',
 	'makeRelativeLinks',
+	'showPatchVersions',
 	'monorepo',
 ];
 export const stubPathKeys = ['rootPath', 'packageRootPath', 'targetPath'];

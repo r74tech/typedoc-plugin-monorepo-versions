@@ -70,10 +70,35 @@ versionSelect.value = DOC_VERSIONS.includes(thisVersion)
 	? thisVersion
 	: DOC_VERSIONS[0];
 versionSelect.onchange = () => {
-	const newPaths = window.location.pathname.replace(
+	const newPath = window.location.pathname.replace(
 		`/${thisVersion}/`,
 		`/${versionSelect.value}/`,
 	);
-	const newUrl = new URL(newPaths, window.location.origin);
-	window.location.assign(newUrl);
+	window.location.assign(new URL(newPath, window.location.origin));
 };
+
+// Remove dropdown options where the current page doesn't exist in that version.
+// Checks the exact page path (not just index.html) so switching always succeeds.
+(async () => {
+	const packageRoot = new URL('../../', import.meta.url).href;
+	// Path relative to the version root (e.g. "types/WikitextMode.html")
+	const versionIdx = locationSplit.indexOf(thisVersion);
+	const pagePath =
+		versionIdx > -1 ? locationSplit.slice(versionIdx + 1).join('/') : '';
+
+	const checks = [...versionSelect.options].map(async (option) => {
+		const ver = option.value;
+		if (ver === 'stable' || ver === 'dev') return;
+		const checkPath = pagePath || 'index.html';
+		try {
+			const res = await fetch(
+				new URL(`${ver}/${checkPath}`, packageRoot).href,
+				{ method: 'HEAD' },
+			);
+			if (!res.ok) option.remove();
+		} catch {
+			option.remove();
+		}
+	});
+	await Promise.all(checks);
+})();

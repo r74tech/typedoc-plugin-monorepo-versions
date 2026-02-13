@@ -39,6 +39,8 @@ export interface versionsOptions {
 	domLocation?: keyof RendererHooks | 'false';
 	packageFile?: string | 'package.json';
 	makeRelativeLinks?: boolean;
+	/** Show individual patch versions (e.g. v1.2.0, v1.2.1) in the dropdown instead of minor only (v1.2). Default: false */
+	showPatchVersions?: boolean;
 	/** Monorepo configuration. When set, enables monorepo mode. */
 	monorepo?: monorepoOptions;
 }

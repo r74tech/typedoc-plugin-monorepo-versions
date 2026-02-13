@@ -10,15 +10,16 @@ import { getMinorVersion } from './version.js';
 /**
  * Creates a string of JavaScript defining an array of all the versions
  * to be included in the frontend select.
+ * @param showPatch When true, list individual patch versions instead of minor-only.
  */
-export function makeJsKeys(metadata: metadata): string {
+export function makeJsKeys(metadata: metadata, showPatch = false): string {
 	const alias = metadata.stable ? 'stable' : 'dev';
-	const keys = [
-		alias,
-		...metadata
-			.versions!.map((v) => getMinorVersion(v))
-			.filter((v, i, s) => s.indexOf(v) === i),
-	];
+	const versionKeys = showPatch
+		? metadata.versions!.filter((v, i, s) => s.indexOf(v) === i)
+		: metadata
+				.versions!.map((v) => getMinorVersion(v))
+				.filter((v, i, s) => s.indexOf(v) === i);
+	const keys = [alias, ...versionKeys];
 	if (alias !== 'dev' && metadata.dev) {
 		keys.push('dev');
 	}

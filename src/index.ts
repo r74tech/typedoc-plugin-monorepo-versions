@@ -28,6 +28,7 @@ export function load(app: Application) {
 			domLocation: 'false',
 			packageFile: 'package.json',
 			makeRelativeLinks: false,
+			showPatchVersions: false,
 			monorepo: undefined,
 		},
 	});
@@ -111,7 +112,10 @@ export function load(app: Application) {
 			vOptions.makeRelativeLinks,
 		);
 
-		const jsVersionKeys = vUtils.makeJsKeys(metadata);
+		const jsVersionKeys = vUtils.makeJsKeys(
+			metadata,
+			vOptions.showPatchVersions,
+		);
 		fs.writeFileSync(path.join(versionRoot, 'versions.js'), jsVersionKeys);
 
 		fs.writeFileSync(
