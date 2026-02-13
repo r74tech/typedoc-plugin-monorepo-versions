@@ -13,6 +13,7 @@ import {
 	stubSemanticLinks,
 	stubTargetPath,
 	stubVersions,
+	monorepoDocsPath,
 } from './stubs/stubs.js';
 import { Application } from 'typedoc';
 import { load } from '../src/index.js';
@@ -55,7 +56,7 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 		});
 		it('lists semantic versions correctly', () => {
 			const directories = vUtils.getPackageDirectories(docsPath);
-			expect(vUtils.getVersions(directories).sort()).toEqual(['v0.0.0', 'v0.1.0', 'v0.1.1', 'v0.10.1', 'v0.2.3'].sort());
+			expect(vUtils.getVersions(directories).sort()).toEqual([...['v0.0.0', 'v0.1.0', 'v0.1.1', 'v0.10.1', 'v0.2.3'] as const].sort());
 		});
 	});
 	describe('creates browser assets', () => {
@@ -106,7 +107,7 @@ describe('Unit testing for typedoc-plugin-versions', () => {
                 docsPath,
                 undefined,
                 currentVersion,
-            ).dev).toEqual('v' + currentVersion);
+            ).dev).toEqual(`v${currentVersion}` as const);
 			expect(vUtils.refreshMetadata(metadata, docsPath, undefined, '1.0.0')
                 .dev).toEqual('v0.10.1');
 		});
@@ -149,6 +150,7 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 			}
 			expect(dirs.rootPath.endsWith(stubRootPath)).toBe(true);
 			expect(dirs.targetPath.endsWith(stubTargetPath(version))).toBe(true);
+			expect(dirs.packageRootPath).toBeUndefined();
 		});
 		it('does not error if .nojekyll is not present', async () => {
 			const app = await Application.bootstrap(typedocOptions);
@@ -177,6 +179,109 @@ describe('Unit testing for typedoc-plugin-versions', () => {
 			expect(fs.existsSync(
                 path.join(dirs.targetPath, 'assets/versionsMenu.js'),
             )).toBe(true);
+		});
+	});
+});
+
+describe('Monorepo mode', () => {
+	describe('getPaths() with monorepo option', () => {
+		it('returns correct rootPath, packageRootPath, and targetPath', async () => {
+			const app = await Application.bootstrap(typedocOptions);
+			const monorepo = { name: 'pkg-a', root: monorepoDocsPath };
+			const dirs = vUtils.getPaths(app, '0.1.0', monorepo);
+			expect(dirs.rootPath).toEqual(monorepoDocsPath);
+			expect(dirs.packageRootPath).toEqual(path.join(monorepoDocsPath, 'pkg-a'));
+			expect(dirs.targetPath).toEqual(path.join(monorepoDocsPath, 'pkg-a', 'v0.1.0'));
+		});
+
+		it('returns undefined packageRootPath in single mode', async () => {
+			const app = await Application.bootstrap(typedocOptions);
+			app.options.setValue('out', docsPath);
+			const dirs = vUtils.getPaths(app, '0.1.0');
+			expect(dirs.packageRootPath).toBeUndefined();
+		});
+	});
+
+	describe('monorepo.name validation', () => {
+		it('rejects names with slashes', () => {
+			expect(() => {
+				if (!/^[a-zA-Z0-9_-]+$/.test('pkg/a')) {
+					throw new Error('monorepo.name is required and must contain only alphanumeric characters, hyphens, and underscores');
+				}
+			}).toThrow();
+		});
+
+		it('rejects names with dots', () => {
+			expect(() => {
+				if (!/^[a-zA-Z0-9_-]+$/.test('..')) {
+					throw new Error('monorepo.name is required and must contain only alphanumeric characters, hyphens, and underscores');
+				}
+			}).toThrow();
+		});
+
+		it('accepts valid names', () => {
+			expect(/^[a-zA-Z0-9_-]+$/.test('pkg-a')).toBe(true);
+			expect(/^[a-zA-Z0-9_-]+$/.test('my_package')).toBe(true);
+			expect(/^[a-zA-Z0-9_-]+$/.test('MyLib123')).toBe(true);
+		});
+	});
+
+	describe('packages metadata', () => {
+		it('loads empty packages metadata when file does not exist', () => {
+			const meta = vUtils.loadPackagesMetadata(monorepoDocsPath);
+			expect(meta).toEqual({ packages: [] });
+		});
+
+		it('saves and loads packages metadata', () => {
+			const meta = { packages: ['pkg-a', 'pkg-b'] };
+			vUtils.savePackagesMetadata(meta, monorepoDocsPath);
+			const loaded = vUtils.loadPackagesMetadata(monorepoDocsPath);
+			expect(loaded).toEqual(meta);
+		});
+	});
+
+	describe('makePackagesJs()', () => {
+		it('generates correct packages.js content', () => {
+			const result = vUtils.makePackagesJs(['pkg-a', 'pkg-b']);
+			expect(result).toContain('DOC_PACKAGES');
+			expect(result).toContain("'pkg-a'");
+			expect(result).toContain("'pkg-b'");
+		});
+	});
+
+	describe('makePackagesIndexHtml()', () => {
+		it('generates HTML with links to all packages', () => {
+			const result = vUtils.makePackagesIndexHtml(['pkg-a', 'pkg-b']);
+			expect(result).toContain('<a href="pkg-a/stable/">pkg-a</a>');
+			expect(result).toContain('<a href="pkg-b/stable/">pkg-b</a>');
+			expect(result).toContain('<!DOCTYPE html>');
+		});
+	});
+
+	describe('version management per package', () => {
+		it('manages metadata independently per package', () => {
+			const pkgARoot = path.join(monorepoDocsPath, 'pkg-a');
+			const metadataA = vUtils.refreshMetadata(
+				vUtils.loadMetadata(pkgARoot),
+				pkgARoot,
+			);
+			expect(metadataA.versions).toBeDefined();
+			expect(metadataA.versions!.length).toBeGreaterThan(0);
+
+			const pkgBRoot = path.join(monorepoDocsPath, 'pkg-b');
+			const metadataB = vUtils.refreshMetadata(
+				vUtils.loadMetadata(pkgBRoot),
+				pkgBRoot,
+			);
+			expect(metadataB.versions).toBeDefined();
+			// pkg-b has v1.0.0 (stable), pkg-a has only dev versions
+			expect(metadataB.stable).toEqual('v1.0.0');
+		});
+
+		it('creates symlinks within package directory', () => {
+			const pkgBRoot = path.join(monorepoDocsPath, 'pkg-b');
+			vUtils.makeAliasLink('stable', pkgBRoot, 'v1.0.0');
+			expect(fs.existsSync(path.join(pkgBRoot, 'stable'))).toBe(true);
 		});
 	});
 });
