@@ -351,6 +351,9 @@ describe('Monorepo mode', () => {
 			const metadataA = vUtils.refreshMetadata(
 				vUtils.loadMetadata(pkgARoot),
 				pkgARoot,
+				'auto',
+				'auto',
+				stubPackageFile,
 			);
 			expect(metadataA.versions).toBeDefined();
 			expect(metadataA.versions!.length).toBeGreaterThan(0);
@@ -359,6 +362,9 @@ describe('Monorepo mode', () => {
 			const metadataB = vUtils.refreshMetadata(
 				vUtils.loadMetadata(pkgBRoot),
 				pkgBRoot,
+				'auto',
+				'auto',
+				stubPackageFile,
 			);
 			expect(metadataB.versions).toBeDefined();
 			// pkg-b has v1.0.0 (stable), pkg-a has only dev versions
