@@ -5,6 +5,12 @@
 	"main": "./index.js",
 	"types": "./index.d.ts",
 	"type": "module",
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"import": "./index.js"
+		}
+	},
 	"scripts": {
 		"lint": "prettier -c .",
 		"test": "bun test --preload ./test/hooks.ts",
