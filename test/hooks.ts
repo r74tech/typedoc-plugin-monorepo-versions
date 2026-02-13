@@ -1,14 +1,13 @@
-import 'source-map-support/register';
-import { jest, beforeAll, afterEach, afterAll } from '@jest/globals';
-process.env.Node = 'test';
-
+import { beforeAll, afterAll, mock } from 'bun:test';
 import fs from 'fs-extra';
 import path from 'path';
 import { docsPath, stubVersions } from './stubs/stubs.js';
 
-jest.spyOn(console, 'error').mockClear();
-jest.spyOn(console, 'warn').mockClear();
-jest.spyOn(console, 'log').mockClear();
+mock.module('console', () => ({
+	error: () => {},
+	warn: () => {},
+	log: () => {},
+}));
 
 beforeAll(() => {
 	deleteFolders([docsPath]);
@@ -18,20 +17,12 @@ beforeAll(() => {
 	});
 });
 
-afterEach(() => {
-	jest.restoreAllMocks();
-	jest.spyOn(console, 'error').mockClear();
-	jest.spyOn(console, 'warn').mockClear();
-	jest.spyOn(console, 'log').mockClear();
-});
-
 afterAll(() => {
 	deleteFolders([docsPath]);
 });
 
 const deleteFolders = (folders: string[]) => {
 	folders.forEach((folder) => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		fs.existsSync(folder) && fs.rmSync(folder, { recursive: true });
+		if (fs.existsSync(folder)) fs.rmSync(folder, { recursive: true });
 	});
 };
