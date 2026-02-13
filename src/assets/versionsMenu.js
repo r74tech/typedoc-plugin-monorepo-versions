@@ -50,8 +50,9 @@ if (isMonorepo && packageSelect) {
 					newPaths[pkgIndex + 1] = 'stable';
 					newPaths.length = pkgIndex + 2;
 				}
+				const joined = newPaths.join('/');
 				const newUrl = new URL(
-					newPaths.join('/'),
+					joined.endsWith('/') ? joined : joined + '/',
 					window.location.origin,
 				);
 				window.location.assign(newUrl);
@@ -78,27 +79,32 @@ versionSelect.onchange = () => {
 };
 
 // Remove dropdown options where the current page doesn't exist in that version.
-// Checks the exact page path (not just index.html) so switching always succeeds.
-(async () => {
-	const packageRoot = new URL('../../', import.meta.url).href;
-	// Path relative to the version root (e.g. "types/WikitextMode.html")
-	const versionIdx = locationSplit.indexOf(thisVersion);
-	const pagePath =
-		versionIdx > -1 ? locationSplit.slice(versionIdx + 1).join('/') : '';
-
-	const checks = [...versionSelect.options].map(async (option) => {
-		const ver = option.value;
-		if (ver === 'stable' || ver === 'dev') return;
+// Checks the exact page path so switching always succeeds.
+// Skipped on file:// or when HEAD is unsupported (e.g. CDNs returning 405).
+if (window.location.protocol !== 'file:') {
+	(async () => {
+		const packageRoot = new URL('../../', import.meta.url).href;
+		const versionIdx = locationSplit.indexOf(thisVersion);
+		const pagePath =
+			versionIdx > -1
+				? locationSplit.slice(versionIdx + 1).join('/')
+				: '';
 		const checkPath = pagePath || 'index.html';
-		try {
-			const res = await fetch(
-				new URL(`${ver}/${checkPath}`, packageRoot).href,
-				{ method: 'HEAD' },
-			);
-			if (!res.ok) option.remove();
-		} catch {
-			option.remove();
-		}
-	});
-	await Promise.all(checks);
-})();
+
+		const checks = [...versionSelect.options].map(async (option) => {
+			const ver = option.value;
+			if (ver === 'stable' || ver === 'dev') return;
+			try {
+				const res = await fetch(
+					new URL(`${ver}/${checkPath}`, packageRoot).href,
+					{ method: 'HEAD' },
+				);
+				// Only remove on definitive 404/410; ignore 405 (HEAD not allowed)
+				if (res.status === 404 || res.status === 410) option.remove();
+			} catch {
+				// Network error — keep the option rather than removing valid versions
+			}
+		});
+		await Promise.all(checks);
+	})();
+}
